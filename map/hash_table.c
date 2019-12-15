@@ -3,10 +3,11 @@
  **********************************************************/
 #include <stdint.h>
 #include <stdlib.h>
+
 #define MAX_LF 0.75
 
 typedef struct _ht_entry {
-    int_fast64_t k;
+    size_t k;
     size_t v;
     struct _ht_entry *next;
 } ht_entry;
@@ -18,7 +19,7 @@ typedef struct {
     ht_entry **buckets;
 } hash_table;
 
-static void ht_put( hash_table *ht, int_fast64_t k, size_t v ) {
+static void ht_put( hash_table *ht, size_t k, size_t v ) {
     ht->lf = (double)ht->ent_cnt / ht->cap;
     if ( ht->lf > MAX_LF ) {  // extend + rehash
         size_t new_cap = ht->cap << 1;
@@ -26,7 +27,7 @@ static void ht_put( hash_table *ht, int_fast64_t k, size_t v ) {
         for ( size_t i = 0; i < ht->cap; i++ ) {
             ht_entry *cur = *( ht->buckets + i );
             while ( cur ) {
-                size_t ni = (size_t)cur->k & ( new_cap - 1 );
+                size_t ni = cur->k & ( new_cap - 1 );
                 ht_entry *next = cur->next;
                 cur->next = new_buckets[ni];
                 new_buckets[ni] = cur;
@@ -37,7 +38,7 @@ static void ht_put( hash_table *ht, int_fast64_t k, size_t v ) {
         ht->buckets = new_buckets;
         ht->cap = new_cap;
     }
-    size_t i = (size_t)k & ( ht->cap - 1 );
+    size_t i = k & ( ht->cap - 1 );
 
     for ( ht_entry *cur = *( ht->buckets + i ); cur; cur = cur->next ) {
         if ( cur->k == k ) {  // duplication
@@ -55,8 +56,8 @@ static void ht_put( hash_table *ht, int_fast64_t k, size_t v ) {
 }
 
 // return SIZE_MAX for empty bucket
-static size_t ht_get( hash_table *ht, int_fast64_t k ) {
-    size_t i = (size_t)k & ( ht->cap - 1 );
+static size_t ht_get( hash_table *ht, size_t k ) {
+    size_t i = k & ( ht->cap - 1 );
     if ( ht->buckets[i] ) {
         for ( ht_entry *cur = *( ht->buckets + i ); cur; cur = cur->next ) {
             if ( cur->k == k ) {
@@ -80,6 +81,7 @@ static void ht_free( hash_table *ht ) {
     for ( size_t i = 0; i < ht->cap; i++ ) {
         ht_entry *cur = *( ht->buckets + i );
         while ( cur ) {
+            // if v is a pointer to heap, free v here
             ht_entry *next = cur->next;
             free( cur );
             cur = next;
@@ -92,15 +94,73 @@ static void ht_free( hash_table *ht ) {
 /**************************************
  *              UNIT TEST
  **************************************/
+typedef struct {
+    size_t k;
+    size_t v;
+} kvpair;
 
 #include <stdio.h>
-int main() {
+#include <time.h>
+
+void test0() {
+    puts( "============= test 0 ================" );
+    srand( time( NULL ) );
+#define N 100000
+    kvpair **arr = malloc( N * sizeof *arr );
+
     hash_table *ht0 = ht_init();
 
-    ht_put( ht0, 2147483647L - ( -2147483648 ), 114514 );
-    printf( "%lu\n", ht_get( ht0, 2147483647L - ( -2147483648 ) ) );
+    for ( size_t i = 0; i < N; i++ ) {
+        kvpair *pair = malloc( sizeof *pair );
+        *pair = ( kvpair ){rand(), rand()};
+        arr[i] = pair;
+        ht_put( ht0, pair->k, pair->v );
+    }
 
-    ht_put( ht0, 2147483647L - ( -2147483648 ), 123 );
-    printf( "%lu\n", ht_get( ht0, 2147483647L - ( -2147483648 ) ) );
+    for ( size_t i = 0; i < N; i++ ) {
+        kvpair *cur = arr[i];
+        size_t v = ht_get( ht0, cur->k );
+        if ( v != cur->v ) {
+            fprintf( stderr,
+                     "Possible Duplicate k. Expect: %lu, but was %lu.\n",
+                     cur->v, v );
+        }
+        free( cur );
+    }
+
+    printf( "Entries number = %lu.\n", ht0->ent_cnt );
+    printf( "Buckets number = %lu.\n", ht0->cap );
     ht_free( ht0 );
+    free( arr );
+}
+
+void test1() {
+    puts( "================= test 1 =================" );
+    srand( time( NULL ) );
+#define N 100000
+    size_t *arr = malloc( N * sizeof *arr );
+
+    hash_table *ht0 = ht_init();
+
+    for ( size_t i = 0; i < N; i++ ) {
+        arr[i] = rand();
+        ht_put( ht0, ( size_t )( arr + i ), arr[i] );
+    }
+
+    for ( size_t i = 0; i < N; i++ ) {
+        size_t v = ht_get( ht0, ( size_t )( arr + i ) );
+        if ( v != arr[i] ) {
+            fputs( "FAILED!", stderr );
+        }
+    }
+
+    printf( "Entries number = %lu.\n", ht0->ent_cnt );
+    printf( "Buckets number = %lu.\n", ht0->cap );
+    ht_free( ht0 );
+    free( arr );
+}
+
+int main() {
+    test0();
+    test1();
 }
