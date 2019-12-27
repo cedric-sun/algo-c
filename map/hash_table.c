@@ -38,9 +38,10 @@ static void ht_put( hash_table *ht, size_t k, size_t v ) {
         ht->buckets = new_buckets;
         ht->cap = new_cap;
     }
-    size_t i = k & ( ht->cap - 1 );
+    size_t hash_i = k & ( ht->cap - 1 );
 
-    for ( ht_entry *cur = *( ht->buckets + i ); cur; cur = cur->next ) {
+    /* if v is a pointer, malloc here */
+    for ( ht_entry *cur = *( ht->buckets + hash_i ); cur; cur = cur->next ) {
         if ( cur->k == k ) {  // duplication
             cur->v = v;
             return;
@@ -48,10 +49,8 @@ static void ht_put( hash_table *ht, size_t k, size_t v ) {
     }
 
     ht_entry *new_ht_entry = malloc( sizeof( *new_ht_entry ) );
-    new_ht_entry->k = k;
-    new_ht_entry->v = v;
-    new_ht_entry->next = ht->buckets[i];
-    ht->buckets[i] = new_ht_entry;
+    *new_ht_entry = ( ht_entry ){.k = k, .v = v, .next = ht->buckets[hash_i]};
+    ht->buckets[hash_i] = new_ht_entry;
     ht->ent_cnt++;
 }
 
@@ -70,9 +69,7 @@ static size_t ht_get( hash_table *ht, size_t k ) {
 
 static hash_table *ht_init() {
     hash_table *ht = malloc( sizeof( *ht ) );
-    ht->cap = 128;
-    ht->lf = 0;
-    ht->ent_cnt = 0;
+    *ht = ( hash_table ){.cap = 128, .lf = 0, .ent_cnt = 0};
     ht->buckets = calloc( ht->cap, sizeof( *ht->buckets ) );
     return ht;
 }

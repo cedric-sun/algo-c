@@ -6,7 +6,7 @@
 // array to be sorted
 static int *arr;
 
-// [lo, hi)
+// [lo, hi]
 static void qsort_hoare( size_t lo, size_t hi ) {
     if ( lo < hi ) {
         int p = arr[( hi + lo ) >> 1];
