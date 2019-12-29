@@ -46,14 +46,16 @@ int main() {
 
         qsort_hoare( 0, TST_SZ - 1 );
 
-        printf("%d\n", data[indice[0]]);
+        //printf("%d\n", data[indice[0]]);
         for ( size_t i = 1; i < TST_SZ; i++ ){
             if (data[indice[i]]<data[indice[i-1]]){
                 puts("PANIC");
                 return -1;
-            } else {
-                printf("%d\n", data[indice[i]]);
-            }
+            } 
+            //else {
+            //    printf("%d\n", data[indice[i]]);
+            //}
         }
+        puts("pass");
     }
 }
