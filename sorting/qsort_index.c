@@ -1,5 +1,9 @@
 /* Sort arr based on gdata */
 
+/* Note that this is different from `sort arr as if gdata is ordered'.
+ * See 791_nlgn.c for that case.
+ */
+
 static int *gdata;
 /************************************
  *   Quick Sort - Hoare Partition
