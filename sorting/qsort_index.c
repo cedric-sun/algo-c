@@ -1,3 +1,5 @@
+/* Sort arr based on gdata */
+
 static int *gdata;
 /************************************
  *   Quick Sort - Hoare Partition
