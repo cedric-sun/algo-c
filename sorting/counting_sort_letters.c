@@ -1,7 +1,5 @@
-/* counting sort is good for sorting string
- * because each element in a string (a char)
- * has fixed-length (1 byte), and the value range
- * is usually small. (for English alphabet it's 26)
+/* counting sort is good for sorting letters in a string since 
+ * the value range is usually small. (for English alphabet it's 26)
  *
  * And since string is a array of naked key without
  * associated data, you don't really need to derive the
