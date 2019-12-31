@@ -220,7 +220,7 @@ int main( void ) {
         "etiumcrasdignissimdiamatmollisegestascrasnibhurnaposuereacmetusutm"
         "oles"
         "tiecursuslectusnullasagittisacipsumnectristique";
-    const char *patterns[] = {"lorem", "nec", "donec", "mattis"};
+    const char *patterns[] = {"lorem", "nec", "donec", "mattis","ipsum"};
     size_t match_sz;
     match *matches = aho_corasick(
         text, patterns, sizeof patterns / sizeof *patterns, &match_sz );
