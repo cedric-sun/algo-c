@@ -20,7 +20,7 @@ static inline ac_node *new_node() {
     node->pattern_id = -1;
     return node;
 }
-match *aho_corasick( const char *text, const char **patterns,
+match *aho_corasick( const char *const text, const char *const *const patterns,
                      size_t patterns_sz, size_t *match_sz ) {
     ac_node *root = new_node();  // root->suffix = NULL;
     size_t *plens = malloc( patterns_sz * sizeof *plens );
@@ -38,7 +38,7 @@ match *aho_corasick( const char *text, const char **patterns,
     size_t cap = 0x1000;  // init cap
     ac_node **Q = malloc( cap * sizeof *Q );
     size_t head = 0, tail = 0;  //[head,tail)
-    Q[tail++]=root;
+    Q[tail++] = root;
 
     while ( head < tail ) {
         ac_node *cur = Q[head++];
@@ -63,7 +63,7 @@ match *aho_corasick( const char *text, const char **patterns,
     }
 
     // second bfs to do suffix compress
-    tail = head = 0;// TODO why not put this into bfs?
+    tail = head = 0;  // TODO why not put this into bfs?
     for ( size_t i = 0; i < LOA; i++ ) {
         if ( root->child[i] ) Q[tail++] = root->child[i];
     }
@@ -98,7 +98,7 @@ match *aho_corasick( const char *text, const char **patterns,
     const size_t tlen = strlen( text );
     ac_node *cur = root;
     for ( size_t i = 0; i < tlen; i++ ) {
-        if (cur==root && !cur->child[text[i] - 'a']) continue;
+        if ( cur == root && !cur->child[text[i] - 'a'] ) continue;
         while ( cur && !cur->child[text[i] - 'a'] ) {
             cur = cur->suffix;
         }
@@ -115,25 +115,25 @@ match *aho_corasick( const char *text, const char **patterns,
                         realloc( matches, ( mcap <<= 1 ) * sizeof *matches );
                 }
                 matches[msz++] =
-                    ( match ){i - plens[p->pattern_id]+1, p->pattern_id};
+                    ( match ){i - plens[p->pattern_id] + 1, p->pattern_id};
             }
         }
     }
 
-    free(plens);
-    head=tail=0;
-    Q[tail++]=root;
-    while (head<tail) {
+    free( plens );
+    head = tail = 0;
+    Q[tail++] = root;
+    while ( head < tail ) {
         ac_node *cur = Q[head++];
-        for (size_t i=0;i<LOA;i++) {
-            if (cur->child[i]) {
-                Q[tail++]=cur->child[i];
+        for ( size_t i = 0; i < LOA; i++ ) {
+            if ( cur->child[i] ) {
+                Q[tail++] = cur->child[i];
             }
         }
-        free(cur);
+        free( cur );
     }
     free( Q );
-    
+
     *match_sz = msz;
     return matches;
 }
@@ -220,7 +220,7 @@ int main( void ) {
         "etiumcrasdignissimdiamatmollisegestascrasnibhurnaposuereacmetusutm"
         "oles"
         "tiecursuslectusnullasagittisacipsumnectristique";
-    const char *patterns[] = {"lorem", "nec", "donec", "mattis","ipsum"};
+    const char *patterns[] = {"lorem", "nec", "donec", "mattis", "ipsum"};
     size_t match_sz;
     match *matches = aho_corasick(
         text, patterns, sizeof patterns / sizeof *patterns, &match_sz );
@@ -228,5 +228,5 @@ int main( void ) {
         printf( "matched: %10s at index %lu\n", patterns[matches[i].pattern_id],
                 matches[i].begin );
     }
-    free(matches);
+    free( matches );
 }
