@@ -20,8 +20,7 @@ static inline ac_node *new_node() {
     node->pattern_id = -1;
     return node;
 }
-match *aho_corasick( const char *const text, const char *const *const patterns,
-                     size_t patterns_sz, size_t *match_sz ) {
+match *aho_corasick( const char *const text, const char *const *const patterns, size_t patterns_sz, size_t *match_sz ) {
     ac_node *root = new_node();  // root->suffix = NULL;
     size_t *plens = malloc( patterns_sz * sizeof *plens );
     for ( size_t i = 0; i < patterns_sz; i++ ) {
@@ -63,23 +62,24 @@ match *aho_corasick( const char *const text, const char *const *const patterns,
     }
 
     // second bfs to do suffix compress
-    tail = head = 0;  // TODO why not put this into bfs?
-    for ( size_t i = 0; i < LOA; i++ ) {
-        if ( root->child[i] ) Q[tail++] = root->child[i];
-    }
+    tail = head = 0;
+    Q[tail++] = root;
 
     while ( head < tail ) {
         ac_node *cur = Q[head++];
-        for ( ac_node *cnd = cur->suffix; cnd; cnd = cnd->suffix ) {
-            if ( cnd->dict_suffix ) {
-                cur->dict_suffix = cnd->dict_suffix;
-                break;
-            }
-            if ( ~cnd->pattern_id ) {
-                cur->dict_suffix = cnd;
-                break;
-            }
+        ac_node *cnd = cur->suffix;
+        // BUG FIX!! THE ORDER OF THE FOLLOWING
+        // CONDITIONAL STATEMENTS MUST BE MAINTAINED!
+        // and no loop needed here
+        if ( cnd && ~cnd->pattern_id ) {
+            cur->dict_suffix = cnd;
         }
+        if ( cnd && cnd->dict_suffix ) {
+            cur->dict_suffix = cnd->dict_suffix;
+        }
+        // if both 2 above not hit,
+        // the dict_suffix fallback null,
+        // which is desired
         for ( size_t i = 0; i < LOA; i++ ) {
             if ( cur->child[i] ) {
                 if ( tail >= cap ) {
@@ -111,11 +111,9 @@ match *aho_corasick( const char *const text, const char *const *const patterns,
         for ( ac_node *p = cur; p; p = p->dict_suffix ) {
             if ( ~p->pattern_id ) {
                 if ( msz >= mcap ) {
-                    matches =
-                        realloc( matches, ( mcap <<= 1 ) * sizeof *matches );
+                    matches = realloc( matches, ( mcap <<= 1 ) * sizeof *matches );
                 }
-                matches[msz++] =
-                    ( match ){i - plens[p->pattern_id] + 1, p->pattern_id};
+                matches[msz++] = ( match ){i - plens[p->pattern_id] + 1, p->pattern_id};
             }
         }
     }
@@ -141,92 +139,37 @@ match *aho_corasick( const char *const text, const char *const *const patterns,
 #include <stdio.h>
 int main( void ) {
     const char *text =
-        "loremipsumdolorsitametconsecteturadipiscingelitduissitametsapienul"
-        "tric"
-        "iesestvolutpatmalesuadacrassemperestsedodioeuismodcursusquisquevel"
-        "volu"
-        "tpateratsedmalesuadapretiummetussedconsequatpellentesqueegeteleife"
-        "ndli"
-        "berononfermentumodioinhachabitasseplateadictumstnullamurnaelitlaci"
-        "niav"
-        "itaecommodonecmattisnecurnasedfringillaetpurusvitaemattismorbimatt"
-        "ispr"
-        "etiumelitetmollisnibhvolutpatacetiamidtinciduntliberofusceutimperd"
-        "iete"
-        "rosvelultricesligulavestibulumanteipsumprimisinfaucibusorciluctuse"
-        "tult"
-        "ricesposuerecubiliacuraeinterdumetmalesuadafamesacanteipsumprimisi"
-        "nfau"
-        "cibuspraesenteuodioidestfacilisismolestieaeneanquistemporodionecul"
-        "tric"
-        "esquamsuspendisseidmaurisarcuvestibulumsedmolestieelitaportaligula"
-        "prae"
-        "sentauctorporttitorporttitormaecenasidconsecteturpurusduisconsequa"
-        "tnul"
-        "lavelvenenatisfacilisisnequelectusconvallisjustositametvehiculamag"
-        "nanu"
-        "ncsitametsemdonecluctusaliquammiuteleifendclassaptenttacitisociosq"
-        "uadl"
-        "itoratorquentperconubianostraperinceptoshimenaeosmorbinonfelisiner"
-        "atco"
-        "nsequatdapibusintegervitaeerosmassadoneclaoreetvariusrisusettempus"
-        "mief"
-        "ficiturutetiamatarcuaduipretiumefficiturmaurisconsecteturegetturpi"
-        "sact"
-        "empusdonecpulvinarsodalesgravidainconguediamutcondimentumeuismodve"
-        "stib"
-        "ulumacvolutpatjustophasellusaliquetdignissimodionecornareutaturnai"
-        "psum"
-        "pellentesquecongueduiaugueeuultricieslacusullamcorpervariusmorbive"
-        "lcur"
-        "suslacusmaecenasegestasnuncarcueusemperloremsuscipitquiscrasvulput"
-        "ates"
-        "emperjustovitaeauctorelitrhoncusquissedporttitoretorcietcondimentu"
-        "mnul"
-        "laatpellentesquelacusplaceratconvallisduimaecenassitamettemporturp"
-        "issu"
-        "spendissenonmetusnislmaecenasauctormattismisitametiaculisnuncmauri"
-        "slib"
-        "eronisimattisegetsollicitudineumalesuadaidvelitdonecutviverraarcuo"
-        "rciv"
-        "ariusnatoquepenatibusetmagnisdisparturientmontesnasceturridiculusm"
-        "ussu"
-        "spendissenecjustoasapienrutrumornarevitaeidipsumvivamusestdiamfeug"
-        "iatn"
-        "ecegestassitametornareaturpispraesentnonipsumelementumcondimentumn"
-        "ulla"
-        "idmollisdolornamconsequatmaurisvitaeultriciesportaliberomifacilisi"
-        "smin"
-        "ecfringillanuncmagnasuscipitnequenuncullamcorperipsumamitristiques"
-        "agit"
-        "tisintegerdictumrisuseuvehiculamattislacusmagnatempormaurisegetsod"
-        "ales"
-        "felisnisletliberophasellusidligulainmaurisvenenatisaliquametiambib"
-        "endu"
-        "mlectusnecmassarutrumsedcursusdolortinciduntsuspendisseconsequatcu"
-        "rsus"
-        "felissitametbibendumvelitfinibusegetdonecvitaetristiquerisusvivamu"
-        "squi"
-        "seratvolutpatsemlobortiselementumetiamenimmagnavariusvitaehendreri"
-        "tnec"
-        "consectetureumidoneclobortissedrisusetconsecteturphasellusaaliquet"
-        "maur"
-        "issedmalesuadavehiculasapienquiselementumexsagittisvitaeorcivarius"
-        "nato"
-        "quepenatibusetmagnisdisparturientmontesnasceturridiculusmussuspend"
-        "isse"
-        "dignissimvelitduiatultriciesorcirutrumacmaurisultriciessitametnisi"
-        "inpr"
-        "etiumcrasdignissimdiamatmollisegestascrasnibhurnaposuereacmetusutm"
-        "oles"
-        "tiecursuslectusnullasagittisacipsumnectristique";
+        "loremipsumdolorsitametconsecteturadipiscingelitduissitametsapienultriciesestvolutpatmalesuadacrassemperestsedo"
+        "dioeuismodcursusquisquevelvolutpateratsedmalesuadapretiummetussedconsequatpellentesqueegeteleifendliberononfer"
+        "mentumodioinhachabitasseplateadictumstnullamurnaelitlaciniavitaecommodonecmattisnecurnasedfringillaetpurusvita"
+        "emattismorbimattispretiumelitetmollisnibhvolutpatacetiamidtinciduntliberofusceutimperdieterosvelultricesligula"
+        "vestibulumanteipsumprimisinfaucibusorciluctusetultricesposuerecubiliacuraeinterdumetmalesuadafamesacanteipsump"
+        "rimisinfaucibuspraesenteuodioidestfacilisismolestieaeneanquistemporodionecultricesquamsuspendisseidmaurisarcuv"
+        "estibulumsedmolestieelitaportaligulapraesentauctorporttitorporttitormaecenasidconsecteturpurusduisconsequatnul"
+        "lavelvenenatisfacilisisnequelectusconvallisjustositametvehiculamagnanuncsitametsemdonecluctusaliquammiuteleife"
+        "ndclassaptenttacitisociosquadlitoratorquentperconubianostraperinceptoshimenaeosmorbinonfelisineratconsequatdap"
+        "ibusintegervitaeerosmassadoneclaoreetvariusrisusettempusmiefficiturutetiamatarcuaduipretiumefficiturmauriscons"
+        "ecteturegetturpisactempusdonecpulvinarsodalesgravidainconguediamutcondimentumeuismodvestibulumacvolutpatjustop"
+        "hasellusaliquetdignissimodionecornareutaturnaipsumpellentesquecongueduiaugueeuultricieslacusullamcorpervariusm"
+        "orbivelcursuslacusmaecenasegestasnuncarcueusemperloremsuscipitquiscrasvulputatesemperjustovitaeauctorelitrhonc"
+        "usquissedporttitoretorcietcondimentumnullaatpellentesquelacusplaceratconvallisduimaecenassitamettemporturpissu"
+        "spendissenonmetusnislmaecenasauctormattismisitametiaculisnuncmaurisliberonisimattisegetsollicitudineumalesuada"
+        "idvelitdonecutviverraarcuorcivariusnatoquepenatibusetmagnisdisparturientmontesnasceturridiculusmussuspendissen"
+        "ecjustoasapienrutrumornarevitaeidipsumvivamusestdiamfeugiatnecegestassitametornareaturpispraesentnonipsumeleme"
+        "ntumcondimentumnullaidmollisdolornamconsequatmaurisvitaeultriciesportaliberomifacilisisminecfringillanuncmagna"
+        "suscipitnequenuncullamcorperipsumamitristiquesagittisintegerdictumrisuseuvehiculamattislacusmagnatempormaurise"
+        "getsodalesfelisnisletliberophasellusidligulainmaurisvenenatisaliquametiambibendumlectusnecmassarutrumsedcursus"
+        "dolortinciduntsuspendisseconsequatcursusfelissitametbibendumvelitfinibusegetdonecvitaetristiquerisusvivamusqui"
+        "seratvolutpatsemlobortiselementumetiamenimmagnavariusvitaehendreritnecconsectetureumidoneclobortissedrisusetco"
+        "nsecteturphasellusaaliquetmaurissedmalesuadavehiculasapienquiselementumexsagittisvitaeorcivariusnatoquepenatib"
+        "usetmagnisdisparturientmontesnasceturridiculusmussuspendissedignissimvelitduiatultriciesorcirutrumacmaurisultr"
+        "iciessitametnisiinpretiumcrasdignissimdiamatmollisegestascrasnibhurnaposuereacmetusutmolestiecursuslectusnulla"
+        "sagittisacipsumnectristique";
     const char *patterns[] = {"lorem", "nec", "donec", "mattis", "ipsum"};
     size_t match_sz;
-    match *matches = aho_corasick(
-        text, patterns, sizeof patterns / sizeof *patterns, &match_sz );
+    match *matches = aho_corasick( text, patterns, sizeof patterns / sizeof *patterns, &match_sz );
     for ( size_t i = 0; i < match_sz; i++ ) {
-        printf( "matched: %10s at index %lu\n", patterns[matches[i].pattern_id],
-                matches[i].begin );
+        printf( "matched: %10s at index %lu\n", patterns[matches[i].pattern_id], matches[i].begin );
     }
     free( matches );
 }
