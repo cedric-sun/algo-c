@@ -1,3 +1,7 @@
+/* Somehow intuitive implementation to generate permutation using backtracking.
+ *
+ * This method naturally generates permutations of [0,sz) in lexicographical order.
+ */
 #include <stdlib.h>
 #include <string.h>
 
