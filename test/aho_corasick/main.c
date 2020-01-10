@@ -31,7 +31,7 @@ int main() {
     int msz;
     const match *matches = aho_corasick( text, patterns, ptns_n, &msz );
     for ( int i = 0; i < msz; i++ ) {
-        printf( "matched: %10s at index %lu\n", patterns[matches[i].pid], matches[i].begin );
+        printf( "matched:\t%s\tat\tindex\t%lu\n", patterns[matches[i].pid], matches[i].begin );
     }
     free( (void *)matches );
 

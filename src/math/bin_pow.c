@@ -24,6 +24,8 @@ int64_t bin_pow_mod( int64_t base, int64_t exp, int64_t mod ) {
 
 #include <stdio.h>
 int main() {
-    printf( "%ld\n", bin_pow( -2, 61 ) );
-    printf( "%ld\n", bin_pow_mod( 2, 11341,992) );
+    const int64_t p = 31, m = 1e9 + 9;
+    for ( int64_t i = 0; i < 100; i++ ) {
+        printf("%ld\n",bin_pow_mod(p,i,m));
+    }
 }

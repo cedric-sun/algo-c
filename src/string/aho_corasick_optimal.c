@@ -17,7 +17,7 @@ const match *aho_corasick( const char *const text, const char *const *const patt
                            int *const matches_n ) {
     int tot = 0;
     memset( tr, 0, sizeof tr );
-    memset( pid, 0, sizeof pid );
+    memset( pid, -1, sizeof pid );
     // root is 0
 
     int *const plens = malloc( patterns_n * sizeof *plens );
@@ -29,10 +29,9 @@ const match *aho_corasick( const char *const text, const char *const *const patt
             if ( !tr[cur][idx] ) tr[cur][idx] = ++tot;
             cur = tr[cur][idx];
         }
-        pid[cur] = i + 1;
+        pid[cur] = i;
     }
 
-    // TODO make sure root never get into the queue
     int *const Q = malloc( tot * sizeof *Q );
     int head = 0, tail = 0;
     for ( int i = 0; i < ALPHA_SZ; i++ )
@@ -67,7 +66,7 @@ const match *aho_corasick( const char *const text, const char *const *const patt
         }
     while ( head < tail ) {
         int cur = Q[head++];
-        if ( !pid[suffix[cur]] ) {
+        if ( !~pid[suffix[cur]] ) {
             suffix[cur] = suffix[suffix[cur]];
             // the property of bfs guarantees that suffix[suffix[x]] is always already dict_suffix[suffix[x]]
         }
@@ -87,9 +86,9 @@ const match *aho_corasick( const char *const text, const char *const *const patt
     for ( int i = 0, cur = 0; i < tlen; i++ ) {
         cur = tr[cur][text[i] - 'a'];
         for ( int x = cur; x; x = suffix[x] ) {
-            if ( pid[x] ) {
+            if ( ~pid[x] ) {
                 if ( msz >= mcap ) matches = realloc( matches, ( mcap <<= 1 ) * sizeof *matches );
-                matches[msz++] = ( match ){i - plens[pid[x] - 1] + 1, pid[x] - 1};
+                matches[msz++] = ( match ){i - plens[pid[x]] + 1, pid[x]};
             }
         }
     }
