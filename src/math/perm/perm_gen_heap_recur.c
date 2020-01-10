@@ -16,8 +16,6 @@ static inline void swap( int i, int j ) {
     p[j] = tmp;
 }
 
-// static void heap_iter( int n ) {}
-
 static void heap_recur( int n ) {
     if ( !n ) {
         print_intarr( p, plen );
@@ -30,6 +28,7 @@ static void heap_recur( int n ) {
 }
 
 static void usage( const char *progname ) { fprintf( stderr, "Usage: %s <positive int>\n", progname ); }
+
 int main( int argc, char **argv ) {
     if ( argc != 2 ) {
         usage( argv[0] );
